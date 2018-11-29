@@ -16,19 +16,88 @@ def mergeTrees(vertex1, vertex2, forest):
         forest[index1].append(element)
     forest.pop(index2)
 
-def unrollTree(vertex, last, tree):
-    neighbours = []
-    for edge in tree:
-        dualVertex1 = mesh.face_handle(mesh.halfedge_handle(edge, 0))
-        dualVertex2 = mesh.face_handle(mesh.halfedge_handle(edge, 1))
-        if (vertex == dualVertex1) and (dualVertex2 != last):
-            neighbours.append(dualVertex2)
-        elif (vertex == dualVertex2) and (dualVertex1 != last):
-            neighbours.append(dualVertex1)
-    for face in neighbours:
-        print(face.idx())
-    for face in neighbours:
-        unrollTree(face, vertex, tree)
+def unrollTree(face, lastHalfEdge, unrolledLastHalfEdge, oppositeUnrolledVertex, halfEdgeTree, mesh, unfoldedMesh):
+    print("Processing face " + str(face.idx()))
+    #First unroll the current face
+    #Get the two known unrolled Vertices
+    unrolledFromVertex = unfoldedMesh.to_vertex_handle(unrolledLastHalfEdge)
+    unrolledToVertex = unfoldedMesh.from_vertex_handle(unrolledLastHalfEdge)
+
+    #Get the edge lengths
+    lastHalfEdgeInFace = mesh.opposite_halfedge_handle(lastHalfEdge)
+    secondHalfEdgeInFace = mesh.next_halfedge_handle(lastHalfEdgeInFace)
+    thirdHalfEdgeInFace = mesh.next_halfedge_handle(secondHalfEdgeInFace)
+    edgelengths=[mesh.calc_edge_length(lastHalfEdgeInFace), mesh.calc_edge_length(secondHalfEdgeInFace),mesh.calc_edge_length(thirdHalfEdgeInFace)]
+
+    #Find the third unrolled Point
+    #print([unfoldedMesh.point(unrolledFromVertex),unfoldedMesh.point(unrolledToVertex), edgelengths ])
+    [newUnrolledVertex0, newUnrolledVertex1] = getThirdPoint(unfoldedMesh.point(unrolledFromVertex), unfoldedMesh.point(unrolledToVertex), edgelengths[0],
+                               edgelengths[1], edgelengths[2])
+    #Check which one is on the opposite side of the edge from  oppositeUnrolledVertex
+    lastUnrolledEdgeVector = unfoldedMesh.point(unrolledToVertex) - unfoldedMesh.point(unrolledFromVertex)
+    newUnrolledVertexVector0 = newUnrolledVertex0- unfoldedMesh.point(unrolledFromVertex)
+
+    newUnrolledVertexVector1 = newUnrolledVertex1 - unfoldedMesh.point(unrolledFromVertex)
+    oppositeVector = unfoldedMesh.point(oppositeUnrolledVertex) - unfoldedMesh.point(unrolledFromVertex)
+
+    if  np.dot(np.cross(lastUnrolledEdgeVector, newUnrolledVertexVector0), np.cross(lastUnrolledEdgeVector, oppositeVector)) <= 0:
+        newUnrolledVertex = unfoldedMesh.add_vertex(newUnrolledVertex0)
+    else:
+        newUnrolledVertex = unfoldedMesh.add_vertex(newUnrolledVertex1)
+
+    #Make the face
+    unfoldedMesh.add_face(unrolledFromVertex, unrolledToVertex, newUnrolledVertex)
+
+    print("Unfolded face " + str(face.idx()) + ".")
+    om.write_mesh('unfolding' + str(face.idx()) + ".off", unfoldedMesh)
+
+    #Now find the neighbours
+    # Get the unrolled halfEdge
+    secondUnrolledHalfEdge = unfoldedMesh.next_halfedge_handle(unfoldedMesh.opposite_halfedge_handle(unrolledLastHalfEdge))
+    thirdUnrolledHalfEdge = unfoldedMesh.next_halfedge_handle(secondUnrolledHalfEdge)
+
+    #Check the two other half edges
+    if secondHalfEdgeInFace in halfEdgeTree:
+        #Get the face
+        neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(secondHalfEdgeInFace))
+        unrollTree(neighbourFace, secondHalfEdgeInFace, secondUnrolledHalfEdge,unrolledFromVertex,halfEdgeTree,mesh,unfoldedMesh)
+    if thirdHalfEdgeInFace in halfEdgeTree:
+        #Get the face
+        neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(thirdHalfEdgeInFace))
+        unrollTree(neighbourFace, thirdHalfEdgeInFace, thirdUnrolledHalfEdge,unrolledToVertex,halfEdgeTree,mesh,unfoldedMesh)
+
+
+def findLeafIndex(forest, spanningTree, mesh):
+    for i in range(len(forest)):
+        outerEdges = []
+
+        for edge in spanningTree:
+            dualVertex1 = mesh.face_handle(mesh.halfedge_handle(edge, 0))
+            dualVertex2 = mesh.face_handle(mesh.halfedge_handle(edge, 1))
+            if (dualVertex1 in forest[i]) != (dualVertex2 in forest[i]):
+                outerEdges.append(edge)
+
+        if len(outerEdges) == 1:
+            #Find the parent
+            dualVertex1 = mesh.face_handle(mesh.halfedge_handle(outerEdges[0], 0))
+            dualVertex2 = mesh.face_handle(mesh.halfedge_handle(outerEdges[0], 1))
+            if dualVertex1 in forest[i]:
+                parent = dualVertex1
+            else:
+                parent = dualVertex2
+            return [True, i, outerEdges[0], parent]
+    return [False, -1, -1, -1]
+
+def getThirdPoint(v0,v1,l01,l12,l20):
+    v2rotx = (l01**2 + l20*2 - l12**2) / (2 * l01)
+    v2roty0 = np.sqrt((l01 + l20 + l12) * (l01 + l20 - l12) * (l01 - l20 + l12) * (-l01 + l20 +l12)) / (2*l01)
+    v2roty1 = - v2roty0
+
+    theta = np.arctan2(v1[1] - v0[1], v1[0] - v0[0])
+    v2trans0 = np.array([v2rotx * np.cos(theta) - v2roty0 *np.sin(theta), v2rotx * np.sin(theta) + v2roty0*np.cos(theta),0])
+    v2trans1 = np.array([v2rotx * np.cos(theta) - v2roty1 *np.sin(theta), v2rotx * np.sin(theta) + v2roty1*np.cos(theta),0])
+
+    return[v2trans0 + v1, v2trans1 + v1]
 
 #FILENAME = 'reduced.off'
 FILENAME = 'models/icosahedron.obj'
@@ -104,25 +173,84 @@ for edge in spanningTree:
     sizeTree = sizeTree + 1
 print("Der Baum hat " + str(sizeTree) + " Kanten.")
 
-#Go through the tree
+#Make a tree of HalfEdges
+halfEdgeTree = []
+for edge in spanningTree:
+    halfEdgeTree.append(mesh.halfedge_handle(edge,0))
+    halfEdgeTree.append(mesh.halfedge_handle(edge, 1))
+
+#Unfolding
 unfoldedMesh = om.TriMesh()
 
-
 #Get the points of the triangle
-trianglePoints = np.empty([3,3])
-i = 0
-for vh in mesh.fv(forest[0][0]):
-    trianglePoints[i,:] = mesh.point(vh)
-    i = i+1
-l01 = np.linalg.norm(trianglePoints[1,:] - trianglePoints[0,:])
-l12 = np.linalg.norm(trianglePoints[2,:] - trianglePoints[1,:])
-l20 = np.linalg.norm(trianglePoints[0,:] - trianglePoints[2,:])
+startingTriangle = forest[0][0]
+
+#Get all halfedges
+firstHalfEdge = mesh.halfedge_handle(startingTriangle)
+secondHalfEdge = mesh.next_halfedge_handle(firstHalfEdge)
+thirdHalfEdge = mesh.next_halfedge_handle(secondHalfEdge)
+
+edgelengths = [mesh.calc_edge_length(firstHalfEdge), mesh.calc_edge_length(secondHalfEdge), mesh.calc_edge_length(thirdHalfEdge)]
+
 #The orientation of the first triangle is arbitrary
-vh0 = unfoldedMesh.add_vertex([0, 0, 0])
-vh1 = unfoldedMesh.add_vertex([l01, 0, 0])
+firstUnrolled = np.array([0,0,0])
+secondUnrolled = np.array([edgelengths[0],0,0])
+
 #Compute third point from lengths
+[thirdUnrolled0, thirdUnrolled1] = getThirdPoint(firstUnrolled, secondUnrolled, edgelengths[0], edgelengths[1], edgelengths[2])
+#Make triangle
+#Add vertices
+firstUnrolledVertex = unfoldedMesh.add_vertex(firstUnrolled)
+secondUnrolledVertex = unfoldedMesh.add_vertex(secondUnrolled)
+thirdUnrolledVertex = unfoldedMesh.add_vertex(thirdUnrolled0)
+#Create the face
+f = unfoldedMesh.add_face(firstUnrolledVertex,secondUnrolledVertex,thirdUnrolledVertex)
+om.write_mesh('unfolding' + str(startingTriangle.idx()) + ".off", unfoldedMesh)
+
+#Now check the neighbours
+#Find the unrolled half-edges inside the face
+firstUnrolledHalfEdge = unfoldedMesh.opposite_halfedge_handle(unfoldedMesh.halfedge_handle(firstUnrolledVertex))
+secondUnrolledHalfEdge = unfoldedMesh.opposite_halfedge_handle(unfoldedMesh.next_halfedge_handle(firstUnrolledHalfEdge))
+thirdUnrolledHalfEdge = unfoldedMesh.opposite_halfedge_handle(unfoldedMesh.next_halfedge_handle(secondUnrolledHalfEdge))
+
+if firstHalfEdge in halfEdgeTree:
+    #Get the neighbouring face
+    neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(firstHalfEdge))
+    unrollTree(neighbourFace, firstHalfEdge, firstUnrolledHalfEdge,secondUnrolledVertex, halfEdgeTree, mesh, unfoldedMesh)
+if secondHalfEdge in halfEdgeTree:
+    neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(secondHalfEdge))
+    unrollTree(neighbourFace, secondHalfEdge, secondUnrolledHalfEdge, thirdUnrolledVertex, halfEdgeTree, mesh, unfoldedMesh)
+if thirdHalfEdge in halfEdgeTree:
+    neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(thirdHalfEdge))
+    unrollTree(neighbourFace, thirdHalfEdge, thirdUnrolledHalfEdge, firstUnrolledVertex, halfEdgeTree, mesh, unfoldedMesh)
 
 
-#print(trianglePoints)
-#print(forest[0][0].idx())
-#unrollTree(forest[0][0], forest[0][0], spanningTree)
+#Connection dict
+#connections = {vertices[0].idx() : vh0, vertices[1].idx() : vh1, vertices[2].idx() : vh2}
+
+#
+# neighbours = []
+# for edge in spanningTree:
+#     dualVertex1 = mesh.face_handle(mesh.halfedge_handle(edge, 0))
+#     dualVertex2 = mesh.face_handle(mesh.halfedge_handle(edge, 1))
+#     if (startingTriangle == dualVertex1):
+#         neighbours.append([dualVertex2,edge])
+#     elif (startingTriangle == dualVertex2):
+#         neighbours.append([dualVertex1, edge])
+# for element in neighbours:
+#     # Find the half edge which is in the face
+#     halfEdge = mesh.halfedge_handle(element[1], 0)
+#     if mesh.face_handle(halfEdge) != startingTriangle:
+#         halfEdge = mesh.opposite_halfedge_handle(halfEdge)
+#
+#     firstVertex = mesh.from_vertex_handle(halfEdge)
+#     secondVertex = mesh.to_vertex_handle(halfEdge)
+#     #Find the third vertex
+#     for vertex in vertices:
+#         if vertex != firstVertex and vertex != secondVertex:
+#             thirdVertex = vertex
+#     unrollTree(element[0], element[1], connections[firstVertex.idx()], connections[secondVertex.idx()], connections[thirdVertex.idx()], spanningTree, mesh, unfoldedMesh)
+
+om.write_mesh('unfolding.off',unfoldedMesh)
+
+
