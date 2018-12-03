@@ -1,6 +1,7 @@
 import numpy as np
 import openmesh as om
 
+from time import sleep
 
 def findTree(vertex, forest):
     """Find the index of the tree in forest that contains vertex"""
@@ -144,12 +145,15 @@ def writeSVG(filename, mesh, isFoldingEdge):
 
     strokewidth = 0.002 * boxSize
     dashLength = 0.002*boxSize
-    spaceLength = 0.01*boxSize
+    spaceLength = 0.003*boxSize
+
+    #dashLength = 0.2
+    #spaceLength = 0.1
 
 
     file = open(filename, 'w')
     file.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n")
-    file.write("<svg width=\"30cm\" height=\"30cm\" viewBox = \""  + str(xmin) + " " + str(ymin) + " " + str(boxSize) + " " + str(boxSize) + "\" version = \"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n")
+    file.write("<svg width=\"29.6cm\" height=\"29.6cm\" viewBox = \""  + str(xmin) + " " + str(ymin) + " " + str(boxSize) + " " + str(boxSize) + "\" version = \"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n")
 
     #file.write("<rect x=\"" + str(xmin) + "\" y=\"" +str(ymin) + "\" width=\"100%\" height=\"100%\"/>\n")
 
@@ -161,11 +165,13 @@ def writeSVG(filename, mesh, isFoldingEdge):
         vertex1 = mesh.point(mesh.to_vertex_handle(he))
 
         file.write("<line x1=\"" + str(vertex0[0]) + "\" y1=\"" + str(vertex0[1]) + "\" x2 = \"" + str(
-            vertex1[0]) + "\" y2 = \"" + str(vertex1[1]) + "\" ")
+            vertex1[0]) + "\" y2 = \"" + str(vertex1[1]) + "\"")
 
         if isFoldingEdge[edge.idx()]:
-            #file.write(" stroke-dasharray=\"%.2f" % dashLength + " %.2f" % spaceLength + "\" ")
-            file.write("style=\"stroke-dasharray:%.2f" %dashLength + ",%.2f" % spaceLength + ";stroke-dashoffset:0\"")
+            file.write(" stroke-dasharray=\"" + str(dashLength) + " " + str(spaceLength) + "\"")
+            #file.write(" stroke-dasharray=\"none\"")
+            #file.write("style=\"stroke-dasharray:%.2f" %dashLength + ",%.2f" % spaceLength + ";stroke-dashoffset:0\"")
+            #file.write(" style=\"fill:none;stroke:#000000;stroke-width:0.31999999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:1;stroke-dasharray:1.28, 2.56;stroke-dashoffset:0;stroke-opacity:1\"")
 
         file.write(" />\n")
 
@@ -174,9 +180,12 @@ def writeSVG(filename, mesh, isFoldingEdge):
     file.close()
 
 
-# FILENAME = 'reduced.off'
-FILENAME = 'models/icosahedron.obj'
+
+#FILENAME = 'models/icosahedron.obj'
 # FILENAME = 'original.off'
+#FILENAME = 'reduced.off'
+#FILENAME = 'models/polyhedron.obj'
+FILENAME = 'models/kndC.obj'
 
 # Import the mode
 mesh = om.read_trimesh(FILENAME)
@@ -201,15 +210,38 @@ print("Das Modell hat " + str(numEdges) + " Kanten, " + str(numFaces) + " Fläch
 # Compute the weights
 # iterate over all edges
 minPerimeterEdgeWeights = np.empty(numEdges)
+flatAngleWeights = np.empty(numEdges)
+dihedralAngleWeights = np.empty(numEdges)
+
+#phi = -np.pi
+#theta = 0.9*np.pi
+#cutVector = np.array([np.cos(phi) * np.sin(theta), np.sin(phi) * np.sin(theta), np.cos(theta)])
+#print(cutVector)
+cutVector = np.array([1.0,1.0,1.0])
+
+cutVector = cutVector / np.linalg.norm(cutVector)
 for edge in mesh.edges():
     edgelength = mesh.calc_edge_length(edge)
     # Schneide kürzere Kanten um Umfang zu minimieren
     minPerimeterEdgeWeights[edge.idx()] = 1.0 - (edgelength - minLength) / (maxLength - minLength)
 
+    #dihedralAngle = mesh.calc_dihedral_angle(edge)
+    #if dihedralAngle >= 0:
+    #    minPerimeterEdgeWeights[edge.idx()] = dihedralAngle
+    #else:
+    #    minPerimeterEdgeWeights[edge.idx()] = 10 - dihedralAngle
+            #np.abs(mesh.calc_dihedral_angle(edge))
+
+    edgeVector = mesh.calc_edge_vector(edge)
+    flatAngleWeights[edge.idx()] = np.abs(np.dot(cutVector,edgeVector)) / np.linalg.norm(edgeVector)
+
+weights = 0 *minPerimeterEdgeWeights + 1*flatAngleWeights
+
+
 # Kruzkal's algorithm
 
 # Sort the weights and find the order of the indices
-sortedIndices = np.argsort(minPerimeterEdgeWeights)
+sortedIndices = np.argsort(weights)
 # Make ordered list of (dual) edges
 sorteddualEdges = []
 for i in range(numEdges):
@@ -257,6 +289,8 @@ for edge in spanningTree:
 unfoldedMesh = om.TriMesh()
 # Array to mark the folding edges
 isFoldingEdge = np.zeros(numUnfoldedEdges, dtype=bool)
+#Face onnection array
+connections = np.empty(numFaces)
 
 # Get the points of the triangle
 startingTriangle = forest[0][0]
@@ -277,14 +311,20 @@ secondUnrolled = np.array([edgelengths[0], 0, 0])
 [thirdUnrolled0, thirdUnrolled1] = getThirdPoint(firstUnrolled, secondUnrolled, edgelengths[0], edgelengths[1],
                                                  edgelengths[2])
 
+if thirdUnrolled0[1] > 0:
+    thirdUnrolled = thirdUnrolled0
+else:
+    thirdUnrolled = thirdUnrolled1
+
 # Make triangle
 # Add vertices
 firstUnrolledVertex = unfoldedMesh.add_vertex(firstUnrolled)
 secondUnrolledVertex = unfoldedMesh.add_vertex(secondUnrolled)
-thirdUnrolledVertex = unfoldedMesh.add_vertex(thirdUnrolled0)
+thirdUnrolledVertex = unfoldedMesh.add_vertex(thirdUnrolled)
 # Create the face
 f = unfoldedMesh.add_face(firstUnrolledVertex, secondUnrolledVertex, thirdUnrolledVertex)
 # om.write_mesh('unfolding' + str(startingTriangle.idx()) + ".off", unfoldedMesh)
+connections[startingTriangle.idx()] = f.idx()
 
 # Now check the neighbours
 # Find the unrolled half-edges inside the face
@@ -294,14 +334,17 @@ thirdUnrolledHalfEdge = unfoldedMesh.opposite_halfedge_handle(unfoldedMesh.next_
 
 if firstHalfEdge in halfEdgeTree:
     # Get the neighbouring face
+    print("first")
     neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(firstHalfEdge))
     unrollTree(neighbourFace, firstHalfEdge, firstUnrolledHalfEdge, secondUnrolledVertex, halfEdgeTree, mesh,
                unfoldedMesh, isFoldingEdge)
 if secondHalfEdge in halfEdgeTree:
+    print("sec")
     neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(secondHalfEdge))
     unrollTree(neighbourFace, secondHalfEdge, secondUnrolledHalfEdge, thirdUnrolledVertex, halfEdgeTree, mesh,
                unfoldedMesh, isFoldingEdge)
 if thirdHalfEdge in halfEdgeTree:
+    print("third")
     neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(thirdHalfEdge))
     unrollTree(neighbourFace, thirdHalfEdge, thirdUnrolledHalfEdge, firstUnrolledVertex, halfEdgeTree, mesh,
                unfoldedMesh, isFoldingEdge)
