@@ -6,7 +6,9 @@ from unfoldfunctions import *
 #FILENAME = 'models/icosahedron.obj'
 #FILENAME = 'original.off'
 #FILENAME = 'reduced.obj'
-FILENAME = 'models/reducedTeddy.obj'
+#FILENAME = 'models/reducedTeddy.obj'
+FILENAME = 'models/bunny.stl'
+#FILENAME = 'models/tree.obj'
 #FILENAME = 'models/polyhedron.obj'
 #FILENAME = 'models/kndC.obj'
 
@@ -112,13 +114,14 @@ for edge in spanningTree:
 unfoldedMesh = om.TriMesh()
 # Array to mark the folding edges
 isFoldingEdge = np.zeros(numUnfoldedEdges, dtype=bool)
+glueNumber = np.empty(numUnfoldedEdges, dtype = int)
 #Face onnection array
 connections = np.empty(numFaces, dtype=int)
 
 # Get the points of the triangle
 startingTriangle = forest[0][0]
 
-unfold(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFoldingEdge, connections, [])
+unfold(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFoldingEdge, connections, [], glueNumber)
 
 
 #Resolve the intersection
@@ -244,20 +247,51 @@ connectedComponents = nx.algorithms.components.connected_components(components)
 
 
 count = 0
+unfoldedComponents = []
 for c in connectedComponents:
-    startingTriangleInd = c.pop()
+    startingTriangleInd = list(c)[0]
     startingTriangle = mesh.face_handle(startingTriangleInd)
     simpleUnfolded = om.TriMesh()
     simpleIsFoldingEdge = np.zeros(numUnfoldedEdges, dtype=bool)
     simpleconnections = np.empty(numFaces, dtype=int)
+    simpleGlueNumber = np.empty(numUnfoldedEdges, dtype=int)
 
-    unfold(simpleUnfolded, mesh, startingTriangle, halfEdgeTree, simpleIsFoldingEdge, simpleconnections, cutHalfEdges)
-    writeSVG("unfolding" + str(count) + ".svg", simpleUnfolded, simpleIsFoldingEdge, np.zeros(numUnfoldedEdges,dtype=bool))
+    unfold(simpleUnfolded, mesh, startingTriangle, halfEdgeTree, simpleIsFoldingEdge, simpleconnections, cutHalfEdges, simpleGlueNumber)
+    #writeSVG("unfolding" + str(count) + ".svg", simpleUnfolded, simpleIsFoldingEdge, np.zeros(numUnfoldedEdges,dtype=bool), simpleGlueNumber)
+    unfoldedComponents.append([simpleUnfolded, simpleIsFoldingEdge, simpleGlueNumber])
     count = count+1
+
+
+#Compute maxSize of the components
+maxSize = 0
+for component in unfoldedComponents:
+    # Get the bounding box
+    firstpoint = component[0].point(mesh.vertex_handle(0))
+    xmin = firstpoint[0]
+    xmax = firstpoint[0]
+    ymin = firstpoint[1]
+    ymax = firstpoint[1]
+    for vertex in component[0].vertices():
+        coordinates = component[0].point(vertex)
+        if (coordinates[0] < xmin):
+            xmin = coordinates[0]
+        if (coordinates[0] > xmax):
+            xmax = coordinates[0]
+        if (coordinates[1] < ymin):
+            ymin = coordinates[1]
+        if (coordinates[1] > ymax):
+            ymax = coordinates[1]
+    boxSize = np.maximum(np.abs(xmax - xmin), np.abs(ymax - ymin))
+    if boxSize > maxSize:
+        maxSize = boxSize
+
+
+#Write
+writeSVG('unfolding.svg', unfoldedMesh, isFoldingEdge, isInterSected, glueNumber, -1)
+
+for i in range(len(unfoldedComponents)):
+    writeSVG("unfolding" + str(i) + ".svg", unfoldedComponents[i][0], unfoldedComponents[i][1], np.zeros(numUnfoldedEdges,dtype=bool), unfoldedComponents[i][2], maxSize)
 
 print("Wir haben " + str(count) + " Komponenten geschrieben.")
 
-
-#om.write_mesh('unfolding.off', unfoldedMesh)
-writeSVG('unfolding.svg', unfoldedMesh, isFoldingEdge, isInterSected)
 
