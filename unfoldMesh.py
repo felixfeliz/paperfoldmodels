@@ -2,15 +2,27 @@ import numpy as np
 import openmesh as om
 import networkx as nx
 from unfoldfunctions import *
+import getopt
+import sys
 
-#FILENAME = 'models/icosahedron.obj'
+
+
+
+printNumbers = True
+
+FILENAME = 'models/icosahedron.obj'
 #FILENAME = 'original.off'
 #FILENAME = 'reduced.obj'
 #FILENAME = 'models/reducedTeddy.obj'
-FILENAME = 'models/bunny.stl'
+#FILENAME = 'models/bunny.stl'
 #FILENAME = 'models/tree.obj'
 #FILENAME = 'models/polyhedron.obj'
 #FILENAME = 'models/kndC.obj'
+
+# for opt in sys.argv[1:]:
+#     print(opt)
+#     if opt == "-n":
+#         printNumbers = True
 
 # Import the mode
 mesh = om.read_trimesh(FILENAME)
@@ -287,10 +299,10 @@ for component in unfoldedComponents:
 
 
 #Write
-writeSVG('unfolding.svg', unfoldedMesh, isFoldingEdge, isInterSected, glueNumber, -1)
+writeSVG('unfolding.svg', unfoldedMesh, isFoldingEdge, isInterSected, glueNumber, -1, printNumbers)
 
 for i in range(len(unfoldedComponents)):
-    writeSVG("unfolding" + str(i) + ".svg", unfoldedComponents[i][0], unfoldedComponents[i][1], np.zeros(numUnfoldedEdges,dtype=bool), unfoldedComponents[i][2], maxSize)
+    writeSVG("unfolding" + str(i) + ".svg", unfoldedComponents[i][0], unfoldedComponents[i][1], np.zeros(numUnfoldedEdges,dtype=bool), unfoldedComponents[i][2], maxSize, printNumbers)
 
 print("Wir haben " + str(count) + " Komponenten geschrieben.")
 

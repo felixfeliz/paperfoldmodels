@@ -210,7 +210,7 @@ def getThirdPoint(v0, v1, l01, l12, l20):
     return [v2trans0 + v0, v2trans1 + v0]
 
 
-def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, size):
+def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, size, printNumbers):
     # Get the bounding box
     firstpoint = mesh.point(mesh.vertex_handle(0))
     xmin = firstpoint[0]
@@ -309,7 +309,8 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, size):
             position = midPoint + textDistance * rotatedVector
             rotation = 180 / np.pi * angle
 
-            file.write("<text x=\"" + str(position[0]) + "\" y=\"" + str(position[1]) + "\" font-size=\"" + str(
+            if(printNumbers):
+                file.write("<text x=\"" + str(position[0]) + "\" y=\"" + str(position[1]) + "\" font-size=\"" + str(
                 fontsize) + "\" stroke-width=\"" + str(textStrokewidth) + "\" transform=\"rotate(" + str(
                 rotation) + "," + str(position[0]) + "," + str(position[1]) + ")\">" + str(
                 glueNumber[edge.idx()]) + "</text>\n")
