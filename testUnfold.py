@@ -1,7 +1,6 @@
 import numpy as np
 import openmesh as om
-from unfoldMesh import unfold, writeSVG
-
+from unfoldmesh import unfold, writeSVG
 from argparse import ArgumentParser
 
 
