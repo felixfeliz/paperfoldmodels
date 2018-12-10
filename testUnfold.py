@@ -1,29 +1,36 @@
 import numpy as np
 import openmesh as om
 from unfoldMesh import unfold, writeSVG
-#import sys
+
+from argparse import ArgumentParser
 
 
 
 def main():
-    printNumbers = True
 
     #FILENAME = 'models/icosahedron.obj'
     #FILENAME = 'original.off'
     #FILENAME = 'reduced.obj'
     #FILENAME = 'models/reducedTeddy.obj'
-    FILENAME = 'models/bunny.stl'
+    #FILENAME = 'models/bunny.stl'
     #FILENAME = 'models/tree.obj'
     #FILENAME = 'models/polyhedron.obj'
     #FILENAME = 'models/kndC.obj'
 
-    # for opt in sys.argv[1:]:
-    #     print(opt)
-    #     if opt == "-n":
-    #         printNumbers = True
+    parser = ArgumentParser()
+    parser.add_argument("-f", "--file", dest="filename", default="models/icosahedron.obj",
+                        help="path to the model", metavar="FILE")
+    parser.add_argument("-n", "--numbers",
+                        action="store_true", dest="printNumbers", default=False,
+                        help="Print numbers on the cut edges")
+    args = parser.parse_args()
+
+
+    printNumbers = args.printNumbers
+    print(printNumbers)
 
     # Import the mode
-    mesh = om.read_trimesh(FILENAME)
+    mesh = om.read_trimesh(args.filename)
 
     fullUnfolded, unfoldedComponents = unfold(mesh,[3.0,1.0,0.0])
 
