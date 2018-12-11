@@ -21,7 +21,7 @@ def mergeTrees(vertex1, vertex2, forest):
 
 
 def unfoldNeighborsInTree(face, lastHalfEdge, unrolledLastHalfEdge, oppositeUnrolledVertex, halfEdgeTree, mesh, unfoldedMesh,
-                          isFoldingEdge, connections, cutEdges, glueNumber):
+                          isFoldingEdge, connections, cutEdges, glueNumber, foldingDirection):
     # print("Processing face " + str(face.idx()))
 
     # First unroll the current face
@@ -61,6 +61,13 @@ def unfoldNeighborsInTree(face, lastHalfEdge, unrolledLastHalfEdge, oppositeUnro
     unrolledLastEdge = unfoldedMesh.edge_handle(unrolledLastHalfEdge)
     isFoldingEdge[unrolledLastEdge.idx()] = True
 
+    #Compute the angle to get the folding direction
+    dihedralAngle = mesh.calc_dihedral_angle(lastHalfEdge)
+    if dihedralAngle < 0:
+        foldingDirection[unrolledLastEdge.idx()] = -1
+    else:
+        foldingDirection[unrolledLastEdge.idx()] = 1
+
     # Save the connections
     connections[newface.idx()] = face.idx()
 
@@ -84,15 +91,15 @@ def unfoldNeighborsInTree(face, lastHalfEdge, unrolledLastHalfEdge, oppositeUnro
         # Get the face
         neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(secondHalfEdgeInFace))
         unfoldNeighborsInTree(neighbourFace, secondHalfEdgeInFace, secondUnrolledHalfEdge, unrolledFromVertex, halfEdgeTree, mesh,
-                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber)
+                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber, foldingDirection)
     if thirdHalfEdgeInFace in halfEdgeTree and not thirdHalfEdgeInFace in cutEdges:
         # Get the face
         neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(thirdHalfEdgeInFace))
         unfoldNeighborsInTree(neighbourFace, thirdHalfEdgeInFace, thirdUnrolledHalfEdge, unrolledToVertex, halfEdgeTree, mesh,
-                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber)
+                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber, foldingDirection)
 
 
-def unfoldSpanningTree(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFoldingEdge, connections, cutEdges, glueNumber):
+def unfoldSpanningTree(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFoldingEdge, connections, cutEdges, glueNumber, foldingDirection):
     # Get all halfedges
     firstHalfEdge = mesh.halfedge_handle(startingTriangle)
     secondHalfEdge = mesh.next_halfedge_handle(firstHalfEdge)
@@ -156,19 +163,19 @@ def unfoldSpanningTree(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFol
         # print("first")
         neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(firstHalfEdge))
         unfoldNeighborsInTree(neighbourFace, firstHalfEdge, firstUnrolledHalfEdge, secondUnrolledVertex, halfEdgeTree, mesh,
-                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber)
+                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber, foldingDirection)
 
     if secondHalfEdge in halfEdgeTree and not secondHalfEdge in cutEdges:
         # print("sec")
         neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(secondHalfEdge))
         unfoldNeighborsInTree(neighbourFace, secondHalfEdge, secondUnrolledHalfEdge, thirdUnrolledVertex, halfEdgeTree, mesh,
-                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber)
+                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber, foldingDirection)
 
     if thirdHalfEdge in halfEdgeTree and not thirdHalfEdge in cutEdges:
         # print("third")
         neighbourFace = mesh.face_handle(mesh.opposite_halfedge_handle(thirdHalfEdge))
         unfoldNeighborsInTree(neighbourFace, thirdHalfEdge, thirdUnrolledHalfEdge, firstUnrolledVertex, halfEdgeTree, mesh,
-                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber)
+                              unfoldedMesh, isFoldingEdge, connections, cutEdges, glueNumber, foldingDirection)
 
     return None
 
@@ -212,7 +219,7 @@ def getThirdPoint(v0, v1, l01, l12, l20):
     return [v2trans0 + v0, v2trans1 + v0]
 
 
-def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, size, printNumbers):
+def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDirecion, size, printNumbers):
     # Get the bounding box
     firstpoint = mesh.point(mesh.vertex_handle(0))
     xmin = firstpoint[0]
@@ -275,6 +282,11 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, size, pri
 
         if isIntersected[edge.idx()]:
             file.write("#ff0000")
+        elif isFoldingEdge[edge.idx()] and foldingDirecion[edge.idx()] > 0:
+            file.write("#ff0000")
+            #file.write("#00e64d")
+        elif isFoldingEdge[edge.idx()] and foldingDirecion[edge.idx()] < 0:
+            file.write("#0066ff")
         else:
             file.write("#000000")
 
@@ -473,13 +485,15 @@ def unfold(mesh, weightFactors):
     # Array to mark the folding edges
     isFoldingEdge = np.zeros(numUnfoldedEdges, dtype=bool)
     glueNumber = np.empty(numUnfoldedEdges, dtype=int)
+    foldingDirections = np.empty(numUnfoldedEdges, dtype=int)
+
     # Face onnection array
     connections = np.empty(numFaces, dtype=int)
 
     # Get the points of the triangle
     startingTriangle = forest[0][0]
 
-    unfoldSpanningTree(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFoldingEdge, connections, [], glueNumber)
+    unfoldSpanningTree(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFoldingEdge, connections, [], glueNumber, foldingDirections)
 
     # Resolve the intersection
 
@@ -599,10 +613,11 @@ def unfold(mesh, weightFactors):
         simpleIsFoldingEdge = np.zeros(numUnfoldedEdges, dtype=bool)
         simpleconnections = np.empty(numFaces, dtype=int)
         simpleGlueNumber = np.empty(numUnfoldedEdges, dtype=int)
+        simpleFoldingDirection = np.empty(numUnfoldedEdges, dtype=int)
 
         unfoldSpanningTree(simpleUnfolded, mesh, startingTriangle, halfEdgeTree, simpleIsFoldingEdge, simpleconnections,
-                           cutHalfEdges, simpleGlueNumber)
+                           cutHalfEdges, simpleGlueNumber, simpleFoldingDirection)
         # writeSVG("unfolding" + str(count) + ".svg", simpleUnfolded, simpleIsFoldingEdge, np.zeros(numUnfoldedEdges,dtype=bool), simpleGlueNumber)
-        unfoldedComponents.append([simpleUnfolded, simpleIsFoldingEdge, simpleGlueNumber])
+        unfoldedComponents.append([simpleUnfolded, simpleIsFoldingEdge, simpleGlueNumber, simpleFoldingDirection])
 
-    return [unfoldedMesh, isFoldingEdge, isInterSected, glueNumber], unfoldedComponents
+    return [unfoldedMesh, isFoldingEdge, isInterSected, glueNumber, foldingDirections], unfoldedComponents

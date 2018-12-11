@@ -59,10 +59,10 @@ def main():
 
 
     #Write
-    writeSVG('unfolding.svg', fullUnfolded[0], fullUnfolded[1], fullUnfolded[2], fullUnfolded[3], -1, printNumbers)
+    writeSVG('unfolding.svg', fullUnfolded[0], fullUnfolded[1], fullUnfolded[2], fullUnfolded[3], fullUnfolded[4], -1, printNumbers)
 
     for i in range(len(unfoldedComponents)):
-        writeSVG("unfolding" + str(i) + ".svg", unfoldedComponents[i][0], unfoldedComponents[i][1], np.zeros(fullUnfolded[0].n_edges(), dtype=bool), unfoldedComponents[i][2], maxSize, printNumbers)
+        writeSVG("unfolding" + str(i) + ".svg", unfoldedComponents[i][0], unfoldedComponents[i][1], np.zeros(fullUnfolded[0].n_edges(), dtype=bool), unfoldedComponents[i][2], unfoldedComponents[i][3], maxSize, printNumbers)
 
     print("Wir haben " + str(len(unfoldedComponents)) + " Komponenten geschrieben.")
 
