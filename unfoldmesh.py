@@ -61,12 +61,7 @@ def unfoldNeighborsInTree(face, lastHalfEdge, unrolledLastHalfEdge, oppositeUnro
     unrolledLastEdge = unfoldedMesh.edge_handle(unrolledLastHalfEdge)
     isFoldingEdge[unrolledLastEdge.idx()] = True
 
-    #Compute the angle to get the folding direction
-    dihedralAngle = mesh.calc_dihedral_angle(lastHalfEdge)
-    if dihedralAngle < 0:
-        foldingDirection[unrolledLastEdge.idx()] = -1
-    else:
-        foldingDirection[unrolledLastEdge.idx()] = 1
+
 
     # Save the connections
     connections[newface.idx()] = face.idx()
@@ -79,6 +74,22 @@ def unfoldNeighborsInTree(face, lastHalfEdge, unrolledLastHalfEdge, oppositeUnro
     secondUnrolledHalfEdge = unfoldedMesh.next_halfedge_handle(
         unfoldedMesh.opposite_halfedge_handle(unrolledLastHalfEdge))
     thirdUnrolledHalfEdge = unfoldedMesh.next_halfedge_handle(secondUnrolledHalfEdge)
+
+    # Compute the angle to get the folding directions
+    if mesh.calc_dihedral_angle(lastHalfEdge) < 0:
+        foldingDirection[unrolledLastEdge.idx()] = -1
+    else:
+        foldingDirection[unrolledLastEdge.idx()] = 1
+    if mesh.calc_dihedral_angle(secondHalfEdgeInFace) < 0:
+        foldingDirection[unfoldedMesh.edge_handle(secondUnrolledHalfEdge).idx()] = -1
+    else:
+        foldingDirection[unfoldedMesh.edge_handle(secondUnrolledHalfEdge).idx()] = 1
+
+    if mesh.calc_dihedral_angle(thirdHalfEdgeInFace) < 0:
+        foldingDirection[unfoldedMesh.edge_handle(thirdUnrolledHalfEdge).idx()] = -1
+    else:
+        foldingDirection[unfoldedMesh.edge_handle(thirdUnrolledHalfEdge).idx()] = 1
+
 
     # Set glue numbers
     glueNumber[unfoldedMesh.edge_handle(unrolledLastHalfEdge).idx()] = mesh.edge_handle(lastHalfEdgeInFace).idx()
@@ -140,6 +151,21 @@ def unfoldSpanningTree(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFol
     #     unfoldedMesh.next_halfedge_handle(secondUnrolledHalfEdge))
     secondUnrolledHalfEdge = unfoldedMesh.next_halfedge_handle(firstUnrolledHalfEdge)
     thirdUnrolledHalfEdge = unfoldedMesh.next_halfedge_handle(secondUnrolledHalfEdge)
+
+    if mesh.calc_dihedral_angle(firstHalfEdge) < 0:
+        foldingDirection[unfoldedMesh.edge_handle(firstUnrolledHalfEdge).idx()] = -1
+    else:
+        foldingDirection[unfoldedMesh.edge_handle(firstUnrolledHalfEdge).idx()] = 1
+
+    if mesh.calc_dihedral_angle(secondHalfEdge) < 0:
+        foldingDirection[unfoldedMesh.edge_handle(secondUnrolledHalfEdge).idx()] = -1
+    else:
+        foldingDirection[unfoldedMesh.edge_handle(secondUnrolledHalfEdge).idx()] = 1
+
+    if mesh.calc_dihedral_angle(thirdHalfEdge) < 0:
+        foldingDirection[unfoldedMesh.edge_handle(thirdUnrolledHalfEdge).idx()] = -1
+    else:
+        foldingDirection[unfoldedMesh.edge_handle(thirdUnrolledHalfEdge).idx()] = 1
 
     # isFoldingEdge[unfoldedMesh.edge_handle(firstUnrolledHalfEdge).idx()] = True
     # print(unfoldedMesh.point(unfoldedMesh.from_vertex_handle(firstUnrolledHalfEdge)), unfoldedMesh.point(unfoldedMesh.to_vertex_handle(firstUnrolledHalfEdge)))
@@ -218,6 +244,9 @@ def getThirdPoint(v0, v1, l01, l12, l20):
         [v2rotx * np.cos(theta) - v2roty1 * np.sin(theta), v2rotx * np.sin(theta) + v2roty1 * np.cos(theta), 0])
     return [v2trans0 + v0, v2trans1 + v0]
 
+def writeToBoth(string, file1, file2):
+    file1.write(string)
+    file2.write(string)
 
 def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDirecion, size, printNumbers):
     # Get the bounding box
@@ -282,10 +311,10 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDi
 
         if isIntersected[edge.idx()]:
             file.write("#ff0000")
-        elif isFoldingEdge[edge.idx()] and foldingDirecion[edge.idx()] > 0:
+        elif foldingDirecion[edge.idx()] > 0:
             file.write("#ff0000")
             #file.write("#00e64d")
-        elif isFoldingEdge[edge.idx()] and foldingDirecion[edge.idx()] < 0:
+        elif foldingDirecion[edge.idx()] < 0:
             file.write("#0066ff")
         else:
             file.write("#000000")
