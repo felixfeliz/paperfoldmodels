@@ -26,7 +26,6 @@ def main():
 
 
     printNumbers = args.printNumbers
-    print(printNumbers)
 
     # Import the mode
     mesh = om.read_trimesh(args.filename)

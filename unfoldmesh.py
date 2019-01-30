@@ -248,6 +248,11 @@ def writeToBoth(string, file1, file2):
     file1.write(string)
     file2.write(string)
 
+def writeToAll(string, file1, file2, file3):
+    file1.write(string)
+    file2.write(string)
+    file3.write(string)
+
 def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDirecion, size, printNumbers):
     # Get the bounding box
     firstpoint = mesh.point(mesh.vertex_handle(0))
@@ -287,14 +292,17 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDi
     frame = 0.05 * boxSize
 
     file = open(filename, 'w')
-    file.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n")
-    file.write("<svg width=\"30.5cm\" height=\"30.5cm\" viewBox = \"" + str(xmin - frame) + " " + str(
+    fileCutting = open("cut" + filename, 'w')
+    fileNumbers = open("numbers" + filename, 'w')
+
+    writeToAll("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n", file, fileCutting, fileNumbers)
+    writeToAll("<svg width=\"30.5cm\" height=\"30.5cm\" viewBox = \"" + str(xmin - frame) + " " + str(
         ymin - frame) + " " + str(boxSize + 2 * frame) + " " + str(
-        boxSize + 2 * frame) + "\" version = \"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n")
+        boxSize + 2 * frame) + "\" version = \"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n", file, fileCutting, fileNumbers)
 
     # file.write("<rect x=\"" + str(xmin) + "\" y=\"" +str(ymin) + "\" width=\"100%\" height=\"100%\"/>\n")
 
-    file.write("<g stroke = \"black\" stroke-width = \"" + str(strokewidth) + "\" >\n")
+    writeToAll("<g stroke = \"black\" stroke-width = \"" + str(strokewidth) + "\" >\n", file, fileCutting, fileNumbers)
     for edge in mesh.edges():
         # Get the two points
         he = mesh.halfedge_handle(edge, 0)
@@ -304,28 +312,28 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDi
         # file.write("<line x1=\"" + str(vertex0[0]) + "\" y1=\"" + str(vertex0[1]) + "\" x2 = \"" + str(
         #    vertex1[0]) + "\" y2 = \"" + str(vertex1[1]) + "\"")
 
-        file.write(
+        writeToBoth(
             "<path d =\"M " + format(vertex0[0], '.10f') + "," + format(vertex0[1], '.10f') + " " + format(vertex1[0],
                                                                                                            '.10f') + "," + format(
-                vertex1[1], '.10f') + "\" style=\"fill:none;stroke:")
+                vertex1[1], '.10f') + "\" style=\"fill:none;stroke:", file, fileCutting)
 
         if isIntersected[edge.idx()]:
-            file.write("#ff0000")
+            writeToBoth("#ff0000", file, fileCutting)
         elif foldingDirecion[edge.idx()] > 0:
-            file.write("#ff0000")
+            writeToBoth("#ff0000", file, fileCutting)
             #file.write("#00e64d")
         elif foldingDirecion[edge.idx()] < 0:
-            file.write("#0066ff")
+            writeToBoth("#0066ff", file, fileCutting)
         else:
-            file.write("#000000")
+            writeToBoth("#000000", file, fileCutting)
 
-        file.write(";stroke-width:" + format(strokewidth,
-                                             '.10f') + ";stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:")
+        writeToBoth(";stroke-width:" + format(strokewidth,
+                                             '.10f') + ";stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:", file, fileCutting)
 
         if isFoldingEdge[edge.idx()]:
-            file.write(format(dashLength, '.10f') + ", " + format(spaceLength, '.10f'))
+            writeToBoth(format(dashLength, '.10f') + ", " + format(spaceLength, '.10f'), file, fileCutting)
         else:
-            file.write("none")
+            writeToBoth("none", file, fileCutting)
             # file.write(" stroke-dasharray=\"" + str(dashLength) + " " + str(spaceLength) + "\"")
             # file.write(" stroke-dasharray=\"none\"")
             # file.write("style=\"stroke-dasharray:%.2f" %dashLength + ",%.2f" % spaceLength + ";stroke-dashoffset:0\"")
@@ -334,8 +342,8 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDi
         #    file.write(" stroke-dasharray=\"none\"")
         # if isIntersected[edge.idx()]:
         #    file.write(" stroke=\"red\" ")
-        file.write(";stroke-dashoffset:0;stroke-opacity:1")
-        file.write("\" />\n")
+        writeToBoth(";stroke-dashoffset:0;stroke-opacity:1", file, fileCutting)
+        writeToBoth("\" />\n", file, fileCutting)
         # write number if it is a cut edge
         if not isFoldingEdge[edge.idx()]:
             # Find halfedge in the face
@@ -353,13 +361,13 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDi
             rotation = 180 / np.pi * angle
 
             if(printNumbers):
-                file.write("<text x=\"" + str(position[0]) + "\" y=\"" + str(position[1]) + "\" font-size=\"" + str(
+                writeToBoth("<text x=\"" + str(position[0]) + "\" y=\"" + str(position[1]) + "\" font-size=\"" + str(
                 fontsize) + "\" stroke-width=\"" + str(textStrokewidth) + "\" transform=\"rotate(" + str(
                 rotation) + "," + str(position[0]) + "," + str(position[1]) + ")\">" + str(
-                glueNumber[edge.idx()]) + "</text>\n")
+                glueNumber[edge.idx()]) + "</text>\n", file, fileNumbers)
 
-    file.write("</g>\n")
-    file.write("</svg>")
+    writeToAll("</g>\n", file, fileNumbers, fileCutting)
+    writeToAll("</svg>", file, fileNumbers, fileCutting)
     file.close()
 
 
@@ -631,6 +639,15 @@ def unfold(mesh, weightFactors):
             face1 = mesh.face_handle(mesh.halfedge_handle(edge, 0))
             face2 = mesh.face_handle(mesh.halfedge_handle(edge, 1))
             components.add_edge(face1.idx(), face2.idx())
+
+    #Find single triangles
+    for face in mesh.faces():
+        allCut = True
+        for edge in mesh.fe(face):
+            if not edge.idx() in S:
+                components.add_edge(face.idx(), face.idx())
+
+
 
     connectedComponents = nx.algorithms.components.connected_components(components)
 
