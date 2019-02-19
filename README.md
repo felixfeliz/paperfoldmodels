@@ -24,8 +24,11 @@ The algorithm consists of three steps:
 2. Unfold the dual graph.
 3. Remove self-intersections by adding additional cuts along edges. 
 
-## Sources
+## Reference
 The code is mostly based on the algorithm presented in this [report](https://geom.ivd.kit.edu/downloads/proj-paper-models_cut_out_sheets.pdf).
+
+## Language
+Because the orignal target audience was a group of German-speaking high-school students, many comments are written in German.
 
 ## Author
 **Felix Scholz**
