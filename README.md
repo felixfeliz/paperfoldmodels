@@ -25,7 +25,7 @@ The algorithm consists of three steps:
 3. Remove self-intersections by adding additional cuts along edges. 
 
 ## Reference
-The code is mostly based on the algorithm presented in this [report](https://geom.ivd.kit.edu/downloads/proj-paper-models_cut_out_sheets.pdf).
+The code is mostly based on the algorithm presented in this [report](https://geom.ivd.kit.edu/downloads/proj-paper-models_cut_out_sheets.pdf) by Straub and Prautzsch.
 
 ## Language
 Because the orignal target audience was a group of German-speaking high-school students, many of the comments are written in German.
