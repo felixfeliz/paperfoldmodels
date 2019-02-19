@@ -139,6 +139,8 @@ def unfoldSpanningTree(unfoldedMesh, mesh, startingTriangle, halfEdgeTree, isFol
     # Create the face
     f = unfoldedMesh.add_face(firstUnrolledVertex, secondUnrolledVertex, thirdUnrolledVertex)
     # om.write_mesh('unfolding' + str(startingTriangle.idx()) + ".off", unfoldedMesh)
+
+
     connections[f.idx()] = startingTriangle.idx()
 
     # Now check the neighbours
@@ -253,7 +255,7 @@ def writeToAll(string, file1, file2, file3):
     file2.write(string)
     file3.write(string)
 
-def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDirecion, size, printNumbers):
+def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDirection, size, printNumbers):
     # Get the bounding box
     firstpoint = mesh.point(mesh.vertex_handle(0))
     xmin = firstpoint[0]
@@ -279,8 +281,8 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDi
     # ymin = np.minimum(xmin,ymin)
 
     strokewidth = 0.002 * boxSize
-    dashLength = 0.002 * boxSize
-    spaceLength = 0.003 * boxSize
+    dashLength = 0.05 * boxSize
+    spaceLength = 0.002 * boxSize
 
     textDistance = 0.02 * boxSize
     textStrokewidth = 0.05 * strokewidth
@@ -319,10 +321,10 @@ def writeSVG(filename, mesh, isFoldingEdge, isIntersected, glueNumber, foldingDi
 
         if isIntersected[edge.idx()]:
             writeToBoth("#ff0000", file, fileCutting)
-        elif foldingDirecion[edge.idx()] > 0:
+        elif foldingDirection[edge.idx()] > 0:
             writeToBoth("#ff0000", file, fileCutting)
             #file.write("#00e64d")
-        elif foldingDirecion[edge.idx()] < 0:
+        elif foldingDirection[edge.idx()] < 0:
             writeToBoth("#0066ff", file, fileCutting)
         else:
             writeToBoth("#000000", file, fileCutting)

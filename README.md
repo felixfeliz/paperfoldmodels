@@ -1,21 +1,21 @@
 # paperfoldmodels
-A python module that unfolds triangulated surfaces to a two-dimensional net. The result can be used to create papercraft models. It is mostly based on the algorithm presented in this [report](https://geom.ivd.kit.edu/downloads/proj-paper-models_cut_out_sheets.pdf) of Straub and Prautzsch.
+A python module that unfolds triangulated surfaces to a two-dimensional net. The result can be used to create papercraft models. 
 
 The python bindings of [openmesh](http://www.openmesh.org) are used and thus the original mesh can be loaded from any format supported by it.
 The output consists of several SVG files, each containing an intersection-free component of the unfolding.
 
 ## Dependencies
-numpy
-
-openmesh
-
-networkx
+* Python 3
+* numpy
+* openmesh
+* networkx
 
 ## Example
 The usage is shown in testUnfold.py
 
-Unfolding of an icosahedron:
-![Icosahedron](icosahedron.svg)
+Unfolding of the stanford bunny:
+![bunny](bunnyReduced.svg)
+The colors indicate the folding direction and the numbers corresponding glued edge.
 
 ## Method
 The algorithm consists of three steps:
@@ -23,3 +23,9 @@ The algorithm consists of three steps:
 1. Find a minimum spanning tree of the dual graph of the mesh.
 2. Unfold the dual graph.
 3. Remove self-intersections by adding additional cuts along edges. 
+
+## Sources
+The code is mostly based on the algorithm presented in this [report](https://geom.ivd.kit.edu/downloads/proj-paper-models_cut_out_sheets.pdf).
+
+## Author
+**Felix Scholz**
