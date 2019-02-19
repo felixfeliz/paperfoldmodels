@@ -15,7 +15,7 @@ The usage is shown in testUnfold.py
 
 Unfolding of the stanford bunny:
 ![bunny](bunnyReduced.svg)
-The colors indicate the folding direction and the numbers corresponding glued edge.
+The colors indicate the folding direction and the numbers the corresponding glued edge.
 
 ## Method
 The algorithm consists of three steps:
