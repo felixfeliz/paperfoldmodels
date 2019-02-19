@@ -6,9 +6,9 @@ The output consists of several SVG files, each containing an intersection-free c
 
 ## Dependencies
 * Python 3
-* numpy
-* openmesh
-* networkx
+* NumPy
+* OpenMesh
+* NetworkX
 
 ## Example
 The usage is shown in testUnfold.py
@@ -24,8 +24,11 @@ The algorithm consists of three steps:
 2. Unfold the dual graph.
 3. Remove self-intersections by adding additional cuts along edges. 
 
-## Sources
+## Reference
 The code is mostly based on the algorithm presented in this [report](https://geom.ivd.kit.edu/downloads/proj-paper-models_cut_out_sheets.pdf).
+
+## Language
+Because the orignal target audience was a group of German-speaking high-school students, many of the comments are written in German.
 
 ## Author
 **Felix Scholz**

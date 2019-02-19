@@ -5,7 +5,7 @@ import numpy as np
 
 #om.read_trimesh(mesh, "models/icosahedron.obj")
 
-mesh = om.read_trimesh('models/teddy.obj')
+mesh = om.read_trimesh('models/bunny')
 
 mesh.triangulate()
 
