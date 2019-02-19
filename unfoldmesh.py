@@ -3,6 +3,7 @@ import openmesh as om
 import networkx as nx
 
 
+#Compute the third point of a triangle when two points and all edge lengths are given
 def getThirdPoint(v0, v1, l01, l12, l20):
     v2rotx = (l01 ** 2 + l20 ** 2 - l12 ** 2) / (2 * l01)
     v2roty0 = np.sqrt((l01 + l20 + l12) * (l01 + l20 - l12) * (l01 - l20 + l12) * (-l01 + l20 + l12)) / (2 * l01)
@@ -10,8 +11,6 @@ def getThirdPoint(v0, v1, l01, l12, l20):
     v2roty1 = - v2roty0
 
     theta = np.arctan2(v1[1] - v0[1], v1[0] - v0[0])
-    # print(v2rotx, v2roty0)
-    # print(theta)
 
     v2trans0 = np.array(
         [v2rotx * np.cos(theta) - v2roty0 * np.sin(theta), v2rotx * np.sin(theta) + v2roty0 * np.cos(theta), 0])
@@ -20,10 +19,8 @@ def getThirdPoint(v0, v1, l01, l12, l20):
     return [v2trans0 + v0, v2trans1 + v0]
 
 
-def line_intersect2(v1, v2, v3, v4, epsilon):
-    '''
-    judge if line (v1,v2) intersects with line(v3,v4)
-    '''
+#Check if two lines intersect
+def lineIntersection(v1, v2, v3, v4, epsilon):
     d = (v4[1] - v3[1]) * (v2[0] - v1[0]) - (v4[0] - v3[0]) * (v2[1] - v1[1])
     u = (v4[0] - v3[0]) * (v1[1] - v3[1]) - (v4[1] - v3[1]) * (v1[0] - v3[0])
     v = (v2[0] - v1[0]) * (v1[1] - v3[1]) - (v2[1] - v1[1]) * (v1[0] - v3[0])
@@ -31,8 +28,8 @@ def line_intersect2(v1, v2, v3, v4, epsilon):
         u, v, d = -u, -v, -d
     return ((0 + epsilon) <= u <= (d - epsilon)) and ((0 + epsilon) <= v <= (d - epsilon))
 
-
-def point_in_triangle2(A, B, C, P, epsilon):
+#Check if a point lies inside a triangle
+def pointInTriangle(A, B, C, P, epsilon):
     v0 = [C[0] - A[0], C[1] - A[1]]
     v1 = [B[0] - A[0], B[1] - A[1]]
     v2 = [P[0] - A[0], P[1] - A[1]]
@@ -45,28 +42,26 @@ def point_in_triangle2(A, B, C, P, epsilon):
     return u >= (0 + epsilon) and v >= (0 + epsilon) and (u + v) <= (d - epsilon)
 
 
-def tri_intersect2(t1, t2, epsilon):
-    '''
-    judge if two triangles in a plane intersect
-    '''
-    if line_intersect2(t1[0], t1[1], t2[0], t2[1], epsilon): return True
-    if line_intersect2(t1[0], t1[1], t2[0], t2[2], epsilon): return True
-    if line_intersect2(t1[0], t1[1], t2[1], t2[2], epsilon): return True
-    if line_intersect2(t1[0], t1[2], t2[0], t2[1], epsilon): return True
-    if line_intersect2(t1[0], t1[2], t2[0], t2[2], epsilon): return True
-    if line_intersect2(t1[0], t1[2], t2[1], t2[2], epsilon): return True
-    if line_intersect2(t1[1], t1[2], t2[0], t2[1], epsilon): return True
-    if line_intersect2(t1[1], t1[2], t2[0], t2[2], epsilon): return True
-    if line_intersect2(t1[1], t1[2], t2[1], t2[2], epsilon): return True
+#Check if two triangles intersect
+def triangleIntersection(t1, t2, epsilon):
+    if lineIntersection(t1[0], t1[1], t2[0], t2[1], epsilon): return True
+    if lineIntersection(t1[0], t1[1], t2[0], t2[2], epsilon): return True
+    if lineIntersection(t1[0], t1[1], t2[1], t2[2], epsilon): return True
+    if lineIntersection(t1[0], t1[2], t2[0], t2[1], epsilon): return True
+    if lineIntersection(t1[0], t1[2], t2[0], t2[2], epsilon): return True
+    if lineIntersection(t1[0], t1[2], t2[1], t2[2], epsilon): return True
+    if lineIntersection(t1[1], t1[2], t2[0], t2[1], epsilon): return True
+    if lineIntersection(t1[1], t1[2], t2[0], t2[2], epsilon): return True
+    if lineIntersection(t1[1], t1[2], t2[1], t2[2], epsilon): return True
     inTri = True
-    inTri = inTri and point_in_triangle2(t1[0], t1[1], t1[2], t2[0], epsilon)
-    inTri = inTri and point_in_triangle2(t1[0], t1[1], t1[2], t2[1], epsilon)
-    inTri = inTri and point_in_triangle2(t1[0], t1[1], t1[2], t2[2], epsilon)
+    inTri = inTri and pointInTriangle(t1[0], t1[1], t1[2], t2[0], epsilon)
+    inTri = inTri and pointInTriangle(t1[0], t1[1], t1[2], t2[1], epsilon)
+    inTri = inTri and pointInTriangle(t1[0], t1[1], t1[2], t2[2], epsilon)
     if inTri == True: return True
     inTri = True
-    inTri = inTri and point_in_triangle2(t2[0], t2[1], t2[2], t1[0], epsilon)
-    inTri = inTri and point_in_triangle2(t2[0], t2[1], t2[2], t1[1], epsilon)
-    inTri = inTri and point_in_triangle2(t2[0], t2[1], t2[2], t1[2], epsilon)
+    inTri = inTri and pointInTriangle(t2[0], t2[1], t2[2], t1[0], epsilon)
+    inTri = inTri and pointInTriangle(t2[0], t2[1], t2[2], t1[1], epsilon)
+    inTri = inTri and pointInTriangle(t2[0], t2[1], t2[2], t1[2], epsilon)
     if inTri == True: return True
     return False
 
@@ -282,7 +277,7 @@ def unfold(mesh):
                     triangle1.append(unfoldedMesh.point(unfoldedMesh.from_vertex_handle(halfedge)))
                 for halfedge in unfoldedMesh.fh(face2):
                     triangle2.append(unfoldedMesh.point(unfoldedMesh.from_vertex_handle(halfedge)))
-                if tri_intersect2(triangle1, triangle2, epsilon):
+                if triangleIntersection(triangle1, triangle2, epsilon):
                     faceIntersections.append([connections[face1.idx()], connections[face2.idx()]])
 
 
