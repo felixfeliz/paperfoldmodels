@@ -31,4 +31,4 @@ The code is mostly based on the algorithm presented in this [report](https://geo
 Because the orignal target audience was a group of German-speaking high-school students, many of the comments are written in German.
 
 ## Author
-**Felix Scholz**
+**Felix Scholz** <felix.scholz@ricam.oeaw.ac.at>
