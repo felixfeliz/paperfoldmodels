@@ -28,7 +28,7 @@ The algorithm consists of three steps:
 The code is mostly based on the algorithm presented in this [report](https://geom.ivd.kit.edu/downloads/proj-paper-models_cut_out_sheets.pdf) by Straub and Prautzsch.
 
 ## Language
-Because the orignal target audience was a group of German-speaking high-school students, many of the comments are written in German.
+Because the original target audience was a group of German-speaking high-school students, many of the comments are written in German.
 
 ## Author
 **Felix Scholz** <felix.scholz@ricam.oeaw.ac.at>
