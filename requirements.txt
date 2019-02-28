@@ -1,0 +1,3 @@
+numpy==1.15.4
+openmesh==1.1.2
+networkx==2.2
