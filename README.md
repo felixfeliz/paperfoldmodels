@@ -1,5 +1,5 @@
 # paperfoldmodels
-A python module that unfolds triangulated surfaces to a two-dimensional net. The result can be used to create papercraft models. 
+A python module that unfolds triangle surfaces onto the plane. The result can be used to create papercraft models. 
 
 The python bindings of [OpenMesh](http://www.openmesh.org) are used and thus the original mesh can be loaded from any format supported by it.
 The output consists of several SVG files, each containing an intersection-free component of the unfolding.
