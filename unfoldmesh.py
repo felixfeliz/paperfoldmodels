@@ -119,7 +119,7 @@ def unfoldSpanningTree(mesh, spanningTree):
     if thirdUnfolded0[1] > 0:
         thirdUnfoldedPoint = thirdUnfolded0
     else:
-        thirdUnfoldePoint = thirdUnfolded1
+        thirdUnfoldedPoint = thirdUnfolded1
 
     # Füge die neuen Ecken zum abgewickelten Netz hinzu
     # firstUnfoldedVertex = unfoldedMesh.add_vertex(secondUnfoldedPoint)
@@ -135,7 +135,7 @@ def unfoldSpanningTree(mesh, spanningTree):
 
     # Speichere Eigenschaften der Fläche und Kanten
     # Die Halbkanten im abgewickelten Gitter
-    firstUnfoldedHalfEdge = unfoldedMesh.opposite_halfedge_handle(unfoldedMesh.halfedge_handle(firstUnfoldedVertex))
+    firstUnfoldedHalfEdge = unfoldedMesh.next_halfedge_handle(unfoldedMesh.opposite_halfedge_handle(unfoldedMesh.halfedge_handle(firstUnfoldedVertex)))
     secondUnfoldedHalfEdge = unfoldedMesh.next_halfedge_handle(firstUnfoldedHalfEdge)
     thirdUnfoldedHalfEdge = unfoldedMesh.next_halfedge_handle(secondUnfoldedHalfEdge)
 
